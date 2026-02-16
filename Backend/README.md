@@ -8,39 +8,28 @@ Complete API documentation for user authentication and profile management endpoi
 
 Registers a new user in the system and returns an authentication token.
 
-### Request Body
-```json
-{
-  "fullname": {
-    "firstname": "string (required, min 3 chars)",
-    "lastname": "string (optional)"
-  },
-  "email": "string (required, valid email)",
-  "password": "string (required, min 6 chars)"
-}
-```
+**Request Headers:**
+- Content-Type: application/json
 
-### Response (201 Created)
-```json
-{
-  "user": {
-    "_id": "string",
-    "fullname": { "firstname": "string", "lastname": "string" },
-    "email": "string",
-    "socketId": "string or null"
-  },
-  "token": "JWT token"
-}
-```
+**Required Fields:**
+- email: string (valid email address)
+- fullname.firstname: string (minimum 3 characters)
+- password: string (minimum 6 characters)
 
-### Example
-```bash
-  -H "Content-Type: application/json" \
-  -d '{"fullname":{"firstname":"John","lastname":"Doe"},"email":"john@example.com","password":"password123"}'
-```
+**Optional Fields:**
+- fullname.lastname: string (user's last name)
 
-### Errors
-- **400 Bad Request**: Validation failed (email, firstname, or password)
+**Response Status:** 201 Created
+
+**Success Response includes:**
+- _id: User unique identifier
+- fullname: Object with firstname and lastname
+- email: User's email address
+- socketId: Socket connection ID (null if not connected)
+- token: JWT authentication token
+
+**Error Codes:**
+- 400 Bad Request: Validation failed (email, firstname, or password)
 
 ---
 
@@ -48,36 +37,25 @@ Registers a new user in the system and returns an authentication token.
 
 Authenticates a user with email and password, returns authentication token.
 
-### Request Body
-```json
-{
-  "email": "string (required, valid email)",
-  "password": "string (required, min 6 chars)"
-}
-```
+**Request Headers:**
+- Content-Type: application/json
 
-### Response (200 OK)
-```json
-{
-  "user": {
-    "_id": "string",
-    "fullname": { "firstname": "string", "lastname": "string" },
-    "email": "string",
-    "socketId": "string or null"
-  },
-  "token": "JWT token"
-}
-```
+**Required Fields:**
+- email: string (valid email address)
+- password: string (minimum 6 characters)
 
-### Example
-```bash
-  -H "Content-Type: application/json" \
-  -d '{"email":"john@example.com","password":"password123"}'
-```
+**Response Status:** 200 OK
 
-### Errors
-- **400 Bad Request**: Validation failed
-- **401 Unauthorized**: User not found or invalid password
+**Success Response includes:**
+- _id: User unique identifier
+- fullname: Object with firstname and lastname
+- email: User's email address
+- socketId: Socket connection ID
+- token: JWT authentication token
+
+**Error Codes:**
+- 400 Bad Request: Validation failed
+- 401 Unauthorized: User not found or invalid password
 
 ---
 
@@ -85,30 +63,19 @@ Authenticates a user with email and password, returns authentication token.
 
 Retrieves the authenticated user's profile information. Requires valid authentication token.
 
-### Headers
-```
-Authorization: Bearer <JWT token>
-```
+**Request Headers:**
+- Authorization: Bearer <JWT token>
 
-### Response (200 OK)
-```json
-{
-  "user": {
-    "_id": "string",
-    "fullname": { "firstname": "string", "lastname": "string" },
-    "email": "string",
-    "socketId": "string or null"
-  }
-}
-```
+**Response Status:** 200 OK
 
-### Example
-```bash
-  -H "Authorization: Bearer <your_jwt_token>"
-```
+**Success Response includes:**
+- _id: User unique identifier
+- fullname: Object with firstname and lastname
+- email: User's email address
+- socketId: Socket connection ID
 
-### Errors
-- **401 Unauthorized**: Invalid or missing authentication token
+**Error Codes:**
+- 401 Unauthorized: Invalid or missing authentication token
 
 ---
 
@@ -116,42 +83,149 @@ Authorization: Bearer <JWT token>
 
 Logs out the authenticated user by blacklisting their token and clearing the session cookie.
 
-### Headers
-```
-Authorization: Bearer <JWT token>
-```
+**Request Headers:**
+- Authorization: Bearer <JWT token>
 
-### Response (200 OK)
-```json
-{
-  "message": "Logged out successfully"
-}
-```
+**Response Status:** 200 OK
 
-### Example
-```bash
-  -H "Authorization: Bearer <your_jwt_token>"
-```
+**Success Response includes:**
+- message: "Logged out successfully"
 
-### Errors
-- **401 Unauthorized**: Invalid or missing authentication token
+**Error Codes:**
+- 401 Unauthorized: Invalid or missing authentication token
 
 ---
 
 ## Authentication
 
-All protected endpoints (profile, logout) require a valid JWT token in the `Authorization` header using the Bearer scheme:
-```
-Authorization: Bearer <token>
+All protected endpoints (profile, logout) require a valid JWT token in the Authorization header using Bearer scheme.
+
+Tokens are stored in cookies after login for automatic session management.
+
+---
+
+---
+
+# Captain API Documentation
+
+Complete API documentation for captain registration, authentication, and profile management endpoints.
+
+---
+
+## POST /captains/register
+
+Registers a new captain with vehicle information.
+
+**Request Body:**
+```json
+{
+  "email": "email@example.com",                    // required, valid email, unique
+  "fullname": {
+    "firstname": "John",                           // required, min 3 chars
+    "lastname": "Doe"                              // optional
+  },
+  "password": "password123",                       // required, min 6 chars
+  "vehicle": {
+    "color": "black",                              // required, min 3 chars
+    "plate": "ABC123",                             // required, min 3 chars
+    "capacity": 4,                                 // required, integer min 1
+    "vehicleType": "car"                           // required, 'car'|'motorcycle'|'auto'
+  }
+}
 ```
 
-Tokens are also stored in cookies after login for automatic session management.
+**Response (201 Created):**
+```json
+{
+  "token": "jwt_token_here",
+  "captain": {
+    "_id": "captain_id",
+    "email": "email@example.com",
+    "fullname": {"firstname": "John", "lastname": "Doe"},
+    "vehicle": {"color": "black", "plate": "ABC123", "capacity": 4, "vehicleType": "car"}
+  }
+}
+```
+
+**Error (400):** `{"message": "Captain with this email already exists."}`
+
+---
+
+## POST /captains/login
+
+Authenticates a captain.
+
+**Request Body:**
+```json
+{
+  "email": "email@example.com",     // required, valid email
+  "password": "password123"         // required, min 6 chars
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "token": "jwt_token_here",
+  "captain": {
+    "_id": "captain_id",
+    "email": "email@example.com",
+    "fullname": {"firstname": "John", "lastname": "Doe"},
+    "vehicle": {"color": "black", "plate": "ABC123", "capacity": 4, "vehicleType": "car"}
+  }
+}
+```
+
+**Error (400):** `{"message": "Invalid email or password."}`
+
+---
+
+## GET /captains/profile
+
+Retrieves captain profile (requires authentication).
+
+**Request Headers:**
+- Authorization: Bearer <JWT token>
+
+**Response (200 OK):**
+```json
+{
+  "captain": {
+    "_id": "captain_id",
+    "email": "email@example.com",
+    "fullname": {"firstname": "John", "lastname": "Doe"},
+    "vehicle": {"color": "black", "plate": "ABC123", "capacity": 4, "vehicleType": "car"}
+  }
+}
+```
+
+**Error (401):** Unauthorized
+
+---
+
+## POST /captains/logout
+
+Logs out captain (requires authentication).
+
+**Request Headers:**
+- Authorization: Bearer <JWT token>
+
+**Response (200 OK):**
+```json
+{
+  "message": "Logged out successfully."
+}
+```
+
+**Error (400/401):** `{"message": "No token provided."}`
+
+---
 
 ## Status Codes
 
 | Code | Description |
 |------|-------------|
 | 200 | Success |
-| 201 | Created (successful registration) |
-| 400 | Bad Request (validation failed) |
-| 401 | Unauthorized (invalid credentials or token) |
+| 201 | Created |
+| 400 | Bad Request |
+| 401 | Unauthorized |
